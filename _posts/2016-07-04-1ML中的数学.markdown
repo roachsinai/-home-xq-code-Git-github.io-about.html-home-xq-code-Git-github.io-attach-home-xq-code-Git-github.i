@@ -1,0 +1,198 @@
+---
+layout:     post
+title:      "ML涉及的数学"
+subtitle:   "出来混总是要还的"
+date:       2016-07-4 19:50:00 +0800
+author:     "Roach"
+catalog: true
+tags:
+    - 机器学习
+    - 高等数学
+---
+
+> 上帝应该先嚼得高数，后玩的骰子。
+
+## 高等数学
+
+#### 切向量
+
+首先，切向量是对但变量函数来说的 $y = f(x)$ ，或者 $f(x, y) = 0$。因为对于多元变量函数，在某一点说的就是切平面了。函数在某点的切向量又称函数在该点切向的方向向量。如果函数在某点的斜率为 $k$，那么函数在该点的切向量就是 $(1, k)$。
+
+证明：
+
++ 已知，点 $B$ 是函数在 $A$ 点切向上的某一点，$A, B$ 两点的坐标分别为 $(x_1, y_1), (x_2, y_2)$。
++ 那么，函数在 $A$ 点的切向量 $\overrightarrow{A B} = (x_2 - x_1, y_2 - y_1)$
++ $k = \frac{y_2 - y_1}{x_2 - x_1}$
++ 所以，$\overrightarrow{A B} \propto （1, K)$
+
+#### 法向量
+
+求平面的法向量，一般将函数（方程）转化成 $f(x,y,z):ax+by+cz+d=0$ 的形式；也就是说如果在二维情况下，直线方程 $y=kx+b$，但是想得到法向量方程应该转换成 $kx-y+b=0$ 的形式，这时候其法向量就是 $\vec{n} = (k, -1)$。
+
+对于平面上的任意两点 $A$ 和 $B$，如果 $\vec{n} \perp \overrightarrow{A B}$，那么 $\vec{n}$ 就是平面的法向量。设两点坐标分别为 $(x_1, y_1, z_1)$ 和 $(x_2, y_2, z_2)$，中需要证明 $a(x_2 - x_1)+b(y_2 - y_1)+c(z_2 - z_1)=0$。因为两点均满足方程 $f(x,y,z)$，得证。即 $(a,b,c)$ 是 $f(x,y,z)$ 的法向量。
+
+#### 梯度下降
+
+> 梯度下降法也叫最速下降法。
+
+**梯度是一个方向**，也就是说梯度是一个向量！那么为什么负梯度方向就是函数下降最快的方向呢？
+
+一元函数只有两个方向（正、负轴方向），那导数为正，梯度方向就是正轴方向；而二元函数则有 $360^{\circ}$ 的方向。而梯度方向是这些方向中函数值增加最快的，是因为梯度方向的**方向导数**最大的方向，而**导数代表函数在这一点的变化率**。
+
+对于给定的点，不同的方向方向导数不同，那么方向导数越大函数变化越大。该方向的方向导数大于零，则函数增加。
+
+###### 步长选择
+
+梯度下降的时候，如果选择的步长过小则收敛速度太慢。但是，如果步长大了则会发生震荡，容易导致无法收敛。
+
+那最小二乘举例，给定矩阵 $A \in \mathbb{R}^{m \times n}$，其中 $m,n$ 分别为数据个数和特征维度（自变量），$b$ 表示因变量。权重向量为 $x$，那么希望求得的 $x$ 最小化 $\mid\mid Ax-b \mid\mid_2^2$，则：
+
+$$\begin{align}
+\because \nabla_x\mid\mid Ax-b \mid\mid_2^2 &= 2A^T(Ax-b) \\
+&= 2A^TAx - 2A^Tb
+\end{align}
+$$
+
+则，最小化 $\mid\mid Ax-b \mid\mid_2^2$ 的 $x = (A^TA)^{-1}A^Tb$.
+
+上面是 $(A^TA)^{-1}$ 存在时，可以直接得到解析解。
+
+但是如果使用梯度下降，步长为 $\alpha$，那么权重更新公式为：
+
+$$\begin{align} x_{n+1} &= x_n - \alpha A^T(Ax_n - b) \\
+&= (I-\alpha A^TA)x_n +\alpha A^Tb
+ \end{align} \qquad (1)$$
+
+那么这就是迭代法，迭代法收敛要求[^1]迭代矩阵的谱半径 $\rho(I-\alpha A^TA)<1$，注意 $A^TA$ 是一个半正定矩阵（特征值不小于 $0$ ），且其对角线元素全大于 $0$，那么 $\alpha$ 必大于零。
+
+另 $A^TA$ 的特征值为 $\lambda_1,\cdots,\lambda_m > 0$，记 $\lambda_{min}=min\{\lambda_1,\cdots,\lambda_m\}$ 则 $\alpha < \frac{2}{\lambda_{min}}$，使得矩阵 $I-\alpha A^TA$ 对角线上的元素和小于 $m$。需要注意，右边这个范围比较宽泛，并不能保证迭代矩阵的谱半径一定小于$1$.
+
+这里[^2],使用迭代矩阵行列式小于$1$.
+
+而对于求函数 $f(x)$ 的零点，可以将 $f(x)=0$ 转化成方程：$x=g(x)$，即转化成求 $g(x)$ 的不动点。那么求 $f(x)$ 的零点 $root$ 的迭代公式即：$x_{n+1}=g(x_n)$，如果收敛则 $root = g(root)$，这一点对梯度下降迭代同样适用，解析解带入公式 $(1)$ 两边成立。
+
+而不动点迭代收敛的条件是[^3]：$\mid g'(x) \mid<1$
+
+证明：
+
+$$\begin{align} f(root)&=0 \\
+root &= g(root) \\
+x_{n+1}-root&=g(x_n)-g(root)\end{align}$$
+
+上面的式子在 $root$ 处泰勒展开：
+
+$$\begin{align} dis_{n+1} &= g(root) + g'(root)(x_n - root) - g(root) \\
+&= g'(·) \times dis_n
+\end{align}$$
+
+那么，满足收敛条件的 $g(x)$，才能得到最后的零点。所以，转化也不能随便转。
+
+#### 牛顿法
+
+使用牛顿法[^4]求 $f'(x)=0$ (机器学习通常用到的)，就是把 $f(x)$ 泰勒展开到二阶导数：
+
+$$f_T(x)=f_T(x_n+\Delta x) \approx f(x_n)+f'(x_n) \Delta x + \frac{1}{2}f''(x_n)\Delta x^2$$
+
+其中，$x_n$是牛顿法$n$次迭代的解；对于不同的 $\Delta x，f_T(x)$ 表示关于 $\Delta x$ 不同的函数。希望找到 $\Delta x$ 满足 $f_T(x)$ 对于其导数为 $0$。即：
+
+$$0={\frac {d}{d\Delta x}}\left(f(x_{n})+f'(x_{n})\Delta x+{\frac {1}{2}}f''(x_{n})\Delta x^{2}\right)=f'(x_{n})+f''(x_{n})\Delta x$$
+
+则， $\Delta x=-f'(x_n)/f^{\prime\prime}(x_n)$
+
+$$x_{n+1}=x_n+\Delta x=x_n-f'(x_n)/f''(x_n)$$
+
+上面是牛顿法求函数的**驻点**，当然也可以求函数的**零点** $f(x)=0$，只不过下面是**泰勒**展开到一阶导，并且另 $\Delta x$ 的函数 $f_T(x)=0$.
+
+可以看到找函数的驻点（一般是极值点）时，梯度下降法只使用了一阶导数，而牛顿法法则使用了二阶导数的信息。
+
+从几何上说，牛顿法就是用一个二次曲面去拟合你当前所处位置的局部曲面，而梯度下降法是用一个平面去拟合当前的局部曲面，通常情况下，二次曲面的拟合会比平面更好，所以牛顿法选择的下降路径会更符合真实的最优下降路径。[^5]
+
+牛顿法是二阶收敛，而梯度下降是一阶收敛。
+
+#### 收敛阶
+
+Rate of convergence[^6]:
+
+Suppose that the sequence $x_K$ converges to the number L. And,
+
+$$\lim _{k\to \infty }{\frac {|x_{k+1}-L|}{|x_{k}-L|^{q}}}=\mu \,{\big |}\;\mu > 0$$
+
+可以发现当 $k\to \infty$ 时，公式上下都小于 $1$，也就是说 $q$ 越大，收敛方法每迭代一步之后，收敛的越快，越接近目标。
+
+## 线性代数
+
+#### 矩阵
+
+矩阵就如我[Linear Algebra!](http://roachsinai.github.io/2015/12/20/1%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0/)这篇$post$下面写的，一个矩阵对应一个线性变换。
+
+**矩阵也可以看成状态的描述**。
+
+$ABC$ 可以看作是对状态 $C$ 先进行 $B$ 变换，然后进行 $A$ 变换，还可以看作是进行了$3$个变换。
+
+#### 行列式
+
+行列式就是线性变换的放大率！[^7]
+
+物理意义就是：变化前体积为 $V_1$，变换之后为 $V_2$，行列式的值就是 $V_2 / V_1$。
+
+#### 矩阵求导
+
+一个非常好的栗子[^8]：
+
+$$AB=C$$
+
+$$\begin{bmatrix}
+a_1 & a_2 \\
+a_3 & a_4
+\end{bmatrix}
+\begin{bmatrix}
+b_1 & b_2 \\
+b_3 & b_4
+\end{bmatrix}
+=
+\begin{bmatrix}
+c_1 & c_2 \\
+c_3 & c_4
+\end{bmatrix}$$
+
+其中：
+
+$$\begin{cases}
+c_1 = a_1b_1 +a_2b_3 \\
+c_2 = a_1b_2 + a_2b_4 \\
+c_3 = a_3b_1 + a_4b_3 \\
+c_4 = a_3b_2 + a_4b_4
+\end{cases}$$
+
+那么：
+
+$$\dfrac{\partial C}{\partial A} \Rightarrow
+\begin{cases}
+\partial c_1 / \partial a_1 = b_1 \\
+\partial c_1 / \partial a_2 = b_3 \\
+\partial c_1 / \partial a_3 = 0 \\
+\partial c_1 / \partial a_4 = 0 \\
+\partial c_2 / \partial a_1 = b_2\\
+\vdots \\
+\partial c_4 / \partial a_4 = b_4
+\end{cases}$$
+
+**即 $C$ 中每一个元素，对于 $A$ 中每一个元素进行求导**。
+
+## References
+
+[^1]:[迭代法的收敛性](http://sxyd.sdut.edu.cn/shuzhifenxi/wlkj/szfx035.htm)
+
+[^2]:[梯度下降法步长的取值范围](http://blog.sciencenet.cn/blog-477629-822983.html)
+
+[^3]:[Fixed Point Iteration](https://www.youtube.com/watch?v=OLqdJMjzib8)
+
+[^4]:[牛顿法](https://en.wikipedia.org/wiki/Newton%27s_method_in_optimization)
+
+[^5]:[最优化问题中，牛顿法为什么比梯度下降法求解需要的迭代次数更少？](https://www.zhihu.com/question/19723347/answer/14636244)
+
+[^6]:[Rate of convergence](https://en.wikipedia.org/wiki/Rate_of_convergence)
+
+[^7]:[行列式的本质是什么？](https://www.zhihu.com/question/36966326/answer/70687817)
+
+[^8]:[如何理解矩阵对矩阵求导？](https://www.zhihu.com/question/39523290/answer/100057066)

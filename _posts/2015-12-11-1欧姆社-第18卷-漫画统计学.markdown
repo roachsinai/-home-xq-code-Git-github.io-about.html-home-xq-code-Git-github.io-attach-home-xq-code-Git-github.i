@@ -1,0 +1,44 @@
+---
+layout: post
+title: "漫画统计学"
+subtitle: "have a rest!"
+date: 2015-12-11 19:53:00 +0800
+author: "Roach"
+tags:
+    - 欧姆社
+    - 统计学
+---
+
+> 欧姆社科普系列——第18卷，《漫画统计学》
+
+### 第一章
+
+population: 总体
+
+### 第二章 掌握数据整体的状态（数值数据篇）
+
+class midpoint: 组中值
+
+frequency：次数，每组数据个数
+
+relative frequency：相对次数，{每组数据个数}/{数据总数}
+
+frequency distribute table：次数分布图
+
+histogram：直方图
+
+class width：组距，组的个数可以用***吉特吉斯公式***求得，而组距则是数据{最大值-最小值}/{组数}
+
+arithmetic average：算数平均数
+
+geometric average：几何平均数 $$\sqrt[n]{x_1 \times x_2 \times ... \times x_n}$$
+
+harmonic average：调和平均数 $$\frac{1}{\frac{\frac{1}{x_1}+\frac{1}{x_2}+...+\frac{1}{x_n}}{n}}$$
+
+standard deviation：标准差
+
+### 第三章 掌握数据整体的状态（分类数据篇）
+
+---
+
+![漫画统计学](../../../../../img/statistics/漫画统计学.jpg)

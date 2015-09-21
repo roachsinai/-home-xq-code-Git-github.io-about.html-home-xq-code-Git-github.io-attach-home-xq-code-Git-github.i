@@ -1,0 +1,86 @@
+---
+layout:     post
+title:      "数据规范化的方法"
+subtitle:   "数据挖掘 & 机器学习"
+date:       2015-10-08 19:50:00 +0800
+author:     "Roach"
+tags:
+    - 机器学习
+---
+
+> 感觉这是机器学习重要的一环，又是一个坑。
+
+说数据规范化是坑是因为**规范化**、**标准化**、**归一化**傻傻分不清。[数据标准化/归一化方法（Normalization Method）汇总](http://www.douban.com/note/292590773/)这一篇貌似还好一点。
+
+在机器学习中数据所用的度量单位可能影响数据分析。例如，把height的度量单位从米变成英寸，把weight的度量单位从公斤改成磅，可能导致完全不同的结果。一般而言，用较小的单位表示属性将导致该属性具有较大值域，因此趋向于使这样的属性具有较大的影响或较高的“权重”。为了帮助避免对度量单位选择的依赖性，数据应该规范化或标准化。这涉及变换数据，使之落入较小的共同区间，如 $$[-1,1]$$ 或 $$[0.0,1.0]$$。（在数据预处理中，术语“规范化”和“标准化”可以互换使用，尽管后一术语在统计学还具有其他含义。）
+
+规范化数据试图赋予所有属性相等的权重。对于涉及神经网络的分类算法或基于距离度量的分类（如最近邻分类）和聚类，规范化特别有用。如果使用神经网络后向传播算法进行分类挖掘，对训练元组中每个属性的输入值规范化将有助于加快学习阶段的速度。对于基于距离的方法，规范化可以帮助防止具有较大初始值域的属性（如income）与具有较小初始值域的属性（如二元属性）相比权重过大。在没有数据的先验知识时，规范化也是有用的。
+
+---
+
+下面介绍三种数据规范化方法，令 $$\small A$$ 是数值属性，具有 $$n$$ 个观测值 $$v_1,v_2,\ldots,v_n$$.
+
+1. <a href="#maxmin">最小-最大规范化</a>
+2. <a href="#score">z-score规范化</a>
+3. <a href="#dot">小数定标规范化</a>
+4. <a href="#table">scaling 图表化显示</a>
+
+<h2 id="maxmin">最小-最大规范化</h2>
+
+最小-最大规范化对原始数据进行线性变换，又叫 range scaling。假设 $$min_A$$ 和 $$max_A$$ 分别为属性 $$A$$ 的最小值和最大值。最小-最大规范化通过计算
+
+$$v'_i = \frac{v_i - min_A}{max_A - min_A}(new\_max_A - new\_min_A) + new\_min_A$$
+
+把 $$\small A$$ 的值 $$v_i$$ 映射到区间 $$new\_min_A,new\_max_A$$ 中的 $$v'_i$$.
+
+最小-最大规范化保持原始数据值之间的联系。如果今后的输入实例落在A的原数据值域之外，则该方法将面临“越界”错误。
+
+---
+
+<h2 id="score">z-score规范化</h2>
+
+在 $$z$$ 分数（z-score）规范化（或零均值规范化）中，属性 $$\small A$$ 的值基于 $$\small A$$ 的均值（即平均值）和标准差规范化。$$\small A$$ 的值 $$vi$$ 被规范化为 $$v'_i$$，由下式计算：
+
+$$v'_i = \frac{v_i - \bar A}{\sigma_A}$$
+
+其中，$$\small A$$ 和$$\sigma_A$$ 分别为属性 $$\small A$$ 的均值和标准差。
+
+上面的标准差可以用均值绝对偏差替换。 $$\small A$$ 的均值绝对偏差（mean absolute deviation） $$s_A$$ 定义为
+
+$$s_A = \frac{1}{n}(\left|v_1 - \bar A\right| + \left|v_2 - \bar A\right| + \cdots + \left|v_n - \bar A\right|)$$
+
+这样，使用均值绝对差的 $$z$$ 分数规范化为
+
+$$v'_i = \frac{v_i - \bar A}{s_A}$$
+
+对于离群点，均值绝对偏差 $$s_A$$ 比标准差更加鲁棒。在计算均值绝对偏差时，不对到均值的偏差即（\|$$x_i - \bar x$$\|）取平方，因此离群点的影响多少有点降低。
+
+---
+
+<h2 id="dot">小数定标规范化</h2>
+
+小数定标规范化通过移动属性 $$s_A$$ 的值的小数点位置进行规范化。小数点的移动位数依赖于 $$s_A$$ 的最大绝对值。 $$s_A$$ 的值 $$v_i$$ 被规范化为 $$v'_A$$，由下式计算：
+
+$$v'_i = \frac{v_i}{10^j}$$
+
+其中，$$j$$ 是使得 $$max(v′_i) < 1$$ 的最小整数。
+
+举例——小数定标。假设 $$s_A$$ 的取值由 $$-986$$ 到 $$917$$。$$s_A$$ 的最大绝对值为 $$986$$。因此，为使用小数定标规范化，我们用 $$1000$$（即 $$j = 3$$）除每个值。因此，$$-986$$ 被规范化为 $$-0.986$$，而 $$917$$ 被规范化为 $$0.917$$。
+
+注意，规范化可能将原来的数据改变很多，特别是使用 $$z$$ 分数规范化或小数定标规范化时尤其如此。有必要保留规范化参数（如均值和标准差，如果使用 $$z$$ 分数规范化的话），以便将来的数据可以用一致的方式规范化。
+
+---
+
+<h2 id="table">scaling 图表化显示</h2>
+
+![Table 1](/img/machinelearning/scaling methods.png)
+
+图片来自文献[1].
+
+> Pareto scaling reduces but does not completely remove the magnitude and seems more appropriate for **chemical data** from the same analytical technique  where **the larger peaks are often more reliable and less susceptible to noise**. This has been explored by Paatero and Hopke who concluded that autoscaling is inappropriate for noisy data where the contribution of weak variables can become too high.[2]
+
+而在分析化学中，因为更相信峰强度较高的粒子，做PLSDA时通常使用 Par scaling 而非 auto scaling。
+
+[1] Berg R A, Hoefsloot H C J, Westerhuis J A, et al. Centering, scaling, and transformations: improving the biological information content of metabolomics data[J]. BMC genomics, 2006, 7(1): 1.
+
+[2] Ivosev G, Burton L, Bonner R. Dimensionality reduction and visualization in principal component analysis[J]. Analytical chemistry, 2008, 80(13): 4933-4944.

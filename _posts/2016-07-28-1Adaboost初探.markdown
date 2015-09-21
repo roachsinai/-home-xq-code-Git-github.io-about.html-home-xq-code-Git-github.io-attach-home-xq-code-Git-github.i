@@ -1,0 +1,123 @@
+---
+layout:     post
+title:      "Adaboost 初识"
+subtitle:   "ADAptive BOOSTing" 
+date:       2016-07-28 13:13:00 +0800
+author:     "Roach"
+catalog: true
+tags:
+    - 机器学习
+    - PRML
+---
+
+> AdaBoost, short for "Adaptive Boosting", is a machine learning meta-algorithm formulated by Yoav Freund and Robert Schapire who won the Gödel Prize in 2003 for their work. 
+>
+> 哥德尔奖颁发给理论计算机领域最杰出的学术论文。
+>
+> 著名的P vs. NP问题，是哥德尔在1956年写给冯•诺依曼（John von Neumann）的一封信中首次提到的。
+
+## Algorithm
+
+Adaboost 是通过**前项分步算法**得到的**加法模型**。就是每一步的学习，都是得到一个基函数，使得目标函数更逼近最优解，并最终输出一个加法模型。
+
+With:
+
+* Samples $x_1 \dots x_n$
+* Desired outputs $y_1 \dots y_n, y \in \{-1, 1\}$
+* Weak learners $h\colon x \rightarrow [-1, 1]$
+
+Output:
+
+* 分类器：$G(x)=sign(H_T(x))$
+
+Procedure:
+
+1. 初始化样本的初始权重 $w_{1,1} \dots w_{n,1}$ set to $\frac{1}{n}$
+
+2. For $t$ in $1 \dots T$:
+    + 对带权重样本进行训练，得到使得带权错误率 $\epsilon_t$ 最小的基分类器 $h_t(x)$，
+    $$\epsilon_t=\sum_{i=1}^N w_{i,t}I(h_t(x_i)\neq y_i)$$
+    + 计算基函数 $h_t(x)$ 的系数，
+    $$\alpha_t=\frac{1}{2}ln\frac{1-\epsilon_t}{\epsilon_t}$$
+    + 更新样本权重，
+    $$w_{i,t+1}=w_{i,t}e^{-y_i\alpha_th_t(x_i)}$$
+    + 样本权重归一化，$\sum_{i=1}^N w_{i,t+1}=1$
+    
+3. 得到加法模型（这一步也可以放到循环里面）:
+    $$H_T(x)=\sum_{t=1}^T \alpha_t h_t(x)$$
+
+4. 最终分类器：$G(x)=sign(H_T(x))$
+
+---
+
+## 证明
+
+刚开始看这个算法的时候，简直是一头雾水。为什么当加上前轮的最优基分类器，就使得最后得到的加法模型最优?
+
+上面的算法一直没有体现，其实 Adaboost 是最小化指数损失，即最小化 $E=\sum_{i=1}^N e^{-y_iH_T(x_i)}$.
+
+那么，
+
+$$E=\sum_{i=1}^N e^{-y_iH_{T-1}(x_i)}e^{-y_i\alpha_th_t(x_i)} \qquad (1)$$
+
+记 $w_t^{(t)}=e^{-y_i\alpha_tH_{T-1}(x_i)}$，因为在第 $t$ 轮时 $H_{T-1}(x)$ 已知，最小化 $E$ 的时候 $w_i^{(t)}$ 可以视为一个已知系数。
+
+$$\begin{align}
+E &= \sum_{y_i = h_t(x_i)} w_i^{(t)}e^{-\alpha_t} + \sum_{y_i \neq h_t(x_i)} w_i^{(t)}e^{\alpha_t} \\
+&=  \sum_{i=1}^N w_i^{(t)}e^{-\alpha_t} + \sum_{y_i \neq h_t(x_i)} w_i^{(t)}({e^{\alpha_t}-e^{-\alpha_t}}) \qquad (2)
+\end{align}$$
+
+最小化 $E$，对 $\alpha_t$ 偏导为 $0$ 得，
+
+$$\frac{d E}{d \alpha_t} = \sum_{y_i \neq h_t(x_i)} w_i^{(t)}e^{\alpha_t} - \sum_{y_i = h_t(x_i)} w_i^{(t)}e^{-\alpha_t}=0$$
+
+则，
+
+$$\alpha_t = \frac{1}{2}ln(\frac{1-\epsilon_t}{\epsilon_t})$$
+
+而对于 $h_t(x)$，则只需最小化 $(2)$ 式第二项即可。**即，对于当前样本权重，$h_t(x)$ 为使得带权错误率最小的基函数**。
+
+加入再进行一轮训练，那么 $w_t^{(t+1)}=e^{-y_iH_{T-1}(x_i)}e^{-y_i\alpha_th_t(x_i)}$，也就是说我们需要的样本权重更新公式为：$w_{i,t+1}=w_{i,t}e^{-y_i\alpha_th_t(x_i)}$
+
+---
+
+## 误差上限
+
+Adaboost 的损失函数是指数损失，那么其期望误差可以表示为：
+
+$$\mathbb{E}_{x,t}\left[exp\left\{-ty(x)\right\}\right]=\sum_t \int exp\left\{-ty(x)\right\}p(t\mid x)p(x) \mathrm(d)x$$
+
+通过对 $y(x)$ 进行变分最小化，（泛函暂时不会）
+
+$$y(x)=\frac{1}{2}ln\left\{\frac{p(t=1|x)}{p(t=-1|x)}\right\}$$
+
+这也就达到了贝叶斯最优错误率，所以 Adaboost 最后的分类器是对加法模型取符号函数——$Sign(x)$.
+
+$$\begin{align} 
+\because sign\left(y(x)\right) &= sign\left(\frac{1}{2}ln\frac{p(t=1|x)}{p(t=-1|x)}\right) \\
+& = \begin{cases} 
+1,  & p(t=1|x) > p(t=-1|x) \\
+-1, & p(t=1|x) < p(t=-1|x)
+\end{cases} \\
+& = argmax_{y\in\{-1,1\}} p(t=y \mid x)
+\end{align}$$
+
+---
+
+## 小结
+
+Adaboost 算是对每一个基函数对样本输出结果的回归，然后使用符号函数进行判别。而且，如果将基函数看作变量的话，每轮添加的基函数则是对之前加法模型的修正，使得总体损失更小。
+
+如果单看 $\sum_t \alpha_t h_(x)$，则类似于 SVM 的 margin：$\frac{y_i(w^Tx+b)}{\mid \mid w \mid \mid _2}$.
+
+$\sum_t \alpha_t h_(x) \longleftrightarrow w^Tx+b$ 则是 voting score，当然希望正确分类的样本 score 越大越好：$y_i\sum_t \alpha_t h_(x) \longleftrightarrow y_i(w^Tx+b)  \uparrow$，也就是最小化指数损失。
+
+而类似 margin 可能是 Adaboost 不容易过拟合的非正式解释。
+
+---
+
+## References
+
+1. [Adaboost](https://en.wikipedia.org/wiki/AdaBoost)
+2. [PRML](prml.github.io)
+3. [Optimization of Adaboost 7:42min](https://www.youtube.com/watch?v=lKkXrFVcZjs)

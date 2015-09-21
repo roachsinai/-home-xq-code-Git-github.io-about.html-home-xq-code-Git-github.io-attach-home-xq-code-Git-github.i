@@ -1,0 +1,51 @@
+---
+layout: post
+title: "Python 成长记"
+subtitle: "学习Python一部分原因是因为machine learning"
+date: 2015-12-05 00:25:00 +0800
+author: "Roach"
+catalog: true
+tags:
+    - Python
+---
+
+> Programming is fun
+> When the work is done
+> if you wanna make your work also fun:
+>           use Python!
+
+---
+
+## 类
+
+#### (im)mutable
+
+Python的数据类型分为可变类型(mutable)与不可变类型(immutable)。不可变类型包含字符串(str)，整数(int)，元组(tuple)；可变类型包含列表(list)，字典(dict)。
+
+但是，python 中万物皆对象，所以不论你给一个list append多少元素，可变对象还是之前的对象，id是不会改变的。
+
+#### 类成员方法
+
+**self** 《python简明教程》说等价与$$\small C++$$中的self指针（this指针），不同的是python中self是 **显式** 的，而C++中是隐式的[后面是我说的，不，理解的]
+
+```
+#!/usr/bin/python
+# Filename: class_method.py
+
+class Person:
+    def sayHi():
+        print 'Hello, how are you?'
+
+p = Person()
+p.sayHi()
+
+TypeError: sayHi() takes no arguments (1 given)
+```
+
+上面的code，写的时候sayHi()中没有explicitly declare **self** 运行的时候，解释器报了TypeError，说sayHi()这个函数不要参数却被解释器给了一个不匹配。
+
+套用C++成员函数存放在.text（代码区）来理解，每个成员函数都要知道自己要处理的是哪个实例，python的区别就是self是显式的。
+
+这应该和python哲学有关：
+
+> Explicit is better than implicit. 

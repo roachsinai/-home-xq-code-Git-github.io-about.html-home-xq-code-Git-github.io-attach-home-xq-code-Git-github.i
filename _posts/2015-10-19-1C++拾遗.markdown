@@ -1,0 +1,323 @@
+---
+layout: post
+title: "C++ 拾遗"
+subtitle: "学好一门语言"
+date: 2015-10-19 20:56:00 +0800
+author: "Roach"
+catalog: true
+tags:
+    - C++
+---
+
+## 编者按
+
+**C++ 拾遗，这篇 `post` 是我学习 C++ 的笔记，或者是对学习 C++ 的过程中所遇问题的解决方法的记录。这样的话篇幅会越来越长，本来打算将其拆分变成一个系列。但是`GitBook`，感觉很合适我的需要，并且又接触了新的东西，所以就将这个系列迁移到了 [GitBook](https://www.gitbook.com/) 上，本 `post` 不再更新。**
+
+[看看 GitBook 上的我 ^o^.](https://roachsinai.github.io/Cpp-learning-notes/)
+
+[GitBook 使用教程](../../../../2016/08/18/1basic_GitBook/)，一眼了解`GitBook`.
+
+> C++ 没有看完，然后看Python的时候不怎么如意。
+
+## 数据类型
+
+#### 数组
+
+1. 不仅数组里面的元素是某类型，**数组就是一种类型**。
+
+
+        #include<iostream>
+        #include<typeinfo>
+
+        using namespace std;
+
+        int main()
+        {
+            char arr[] = "abcd";
+            cout << typeid(arr).name() << endl; // output: A5_c
+            cout << sizeof(arr) << endl;        // output: 5
+
+            return 0;
+        }
+
+
+    这里`arr`就是一个可以放`5`个字符的数组，而`char (*p)[5]`则`p`是一个指向和`arr`同类型的指针。
+
+2. 数组变量退化为指针
+
+    除了以下`3`种情况，数组变量都会退化为一个指向首元素的指针:[^1]
+
+    - `sizeof(arr)`
+    - `&arr`
+    - 使用`"abcd"`来初始化`arr`时;
+
+    <pre><code>int main()
+    {
+        char arr[] = "abcd";
+        cout << typeid(arr).name() << endl;     // output: A5_c
+        cout << sizeof(&arr) << endl;           // output: PA5_c
+
+        cout << typeid(&arr[0]).name() << endl; // output: Pc, pointer to char
+
+        cout << (int) (&arr) << endl;           // 2752195
+        cout << (int) (&arr+1) << endl;         // 2752200 & 运算符优先级高于 +
+        cout << (int) (&arr[0]+1) << endl;      // 2752196
+
+        return 0;
+    }
+    </code></pre>
+
+3. `qsort compare function`
+
+    `compare` 函数的参数是欲比较的两个元素的地址，那么如果有一个`char** strNumbers`，它指向`10`个一级指针，每个一级指针指向以字符串形式保存的数字[^2]。那么：
+
+
+        // int型整数用十进制表示最多只有10位
+        const int g_MaxNumberLength = 10;
+
+        char* g_StrCombine1 = new char[g_MaxNumberLength * 2 + 1];
+        char* g_StrCombine2 = new char[g_MaxNumberLength * 2 + 1];
+
+        int compare(const void* strNumber1, const void* strNumber2)
+        {
+            // 拼接[strNumber1][strNumber2]
+            // [123][78] -> [12378]
+            strcpy(g_StrCombine1, *(const char**)strNumber1);
+            strcat(g_StrCombine1, *(const char**)strNumber2);
+
+            // [strNumber2][strNumber1]
+            // [78][123] -> [78123]
+            strcpy(g_StrCombine2, *(const char**)strNumber2);
+            strcat(g_StrCombine2, *(const char**)strNumber1);
+
+            return strcmp(g_StrCombine1, g_StrCombine2);
+        }
+
+        char** strNumbers = (char**)(new int[10]);
+
+        ... // 给 strNumbers 赋值
+
+        qsort(strNumbers, 10, sizeof(char*), compare);
+
+
+    上面代码不清楚的就是`*(const char**)`，其实这是写`compare funtion`的套路（用词不当，请见谅）：传入形参类型`const void *a`，函数中强制转换为`*(Mytype*)a`使用。这时上面的`strNumber1`实际是`PPC: char**`.
+
+    而我试图写下面的代码：
+
+    ```
+    cout << *((const char**)(&arr)) << endl; // 试图访问地址为 a: 97 的内存
+    ```
+
+    这里，`&arr`虽然没有退化成指向第一个元素的指针（也不能说是指针，只是得到数组第一个元素的地址），但是还只是一个一级地址只不过是带**类型**（`+1 = +5`，走一步等于走了`5`个字节）,并非**二级地址**。
+
+    数组不退化，也只是相对一般指针步子大一点。`arr[]`初始化另算。
+
+#### const and static
+
+个人感觉这个很重要！
+
+```C++
+#include "iostream"
+using namespace std;
+
+class A
+{
+private:
+	static int m_i; // 声明
+	static const int p = 1; // 定义 确定变量的内存、名称
+};
+
+int A::m_i = 1; // 定义
+
+class B
+{
+private:
+	const int m_i;
+	static const int p;
+};
+
+const int B::p = 1;
+
+int main(int argc, char const *argv[])
+{
+    extern int a; // 声明 将某个变量引入当前作用域
+    extern int a; // 可以重复
+
+    return 0;
+}
+```
+
+上面的代码可以正确执行。可以发现虽然成员变量在 A 中是私有变量，但是允许在类外直接定义（不然也没有其他方法），而类内对于 m_i 只是一个声明。A 的成员变量 p 则可以定义初始化，区别就在于 p 定义为 const 变量， 如果允许 m_i 在类中定义会出现如下问题：已经定义了 A 的一个实例，并且该实例对 m_i 进行了修改，但是这个修改被重新定义的 A 的另一个实例抹除了。类 B 的定义表明类的 const 静态成员也可以在类定义之外进行初始化。而 B 类中的常量成员则需要通过构造函数进行列表初始化。
+
+**但是在实际应用中，这些初始化操作都需要在 .cpp 中实现，不然其他文件包含了头文件之后会发生错误。**
+
+另外，没有发现const与static的不同呢！类静态变量，类外定义的时候不能写static，而如果声明的时候加了const则定义的时候const又不可缺少。因为static是存储说明符，就是说已经声明了是一个static变量，已经知道要放在静态存储区，那么定义的时候直接去静态存储去赋值就可以了。而 const 是编译器对编译符号附加的一个属性表示只读，跟类型是结合在一起的 就是说 const int 和 int 是不同的类型，不然去掉const表明下面遇到B::p时，p都是可变的了。
+
+#### 数组为什么不能执行赋值[^3]
+
+> 从这里看出任何事情都是一个权衡的过程，统筹好了才能继续发展先去！
+
+源代码级别和C语言兼容性的考虑。当年的C++完全向下兼容C；虽然现在标准C和标准C++有相当大的差别，但是表面上的公共语言特性都没有很大改变。
+
+C语言中，数组在许多情况下都会隐式转换为对应的指向数组首个元素的指针（对应的类型转换称为退化）。有了数组的退化特性，同时通过p[i]和*(p+i)的等价性就可以以比较方便的语法形式引用数组的元素；且在参数传递时数组退化为指针对一般目的而言是比较高效的，无需按值传递（复制）整个数组。这样做的副作用就是对于operator=而言，为了维护左操作数作为数组名或对应指针名表现的行为的一致性（注意C语言中没有运算符重载，内置运算符的行为对于各种类型而言语义大体一致），数组在这里退化为指针而不表示整个数组。而**数组退化得到的指针是常量（指针）**，因此数组无法作为operator=的左操作数。
+
+理论上要实现数组的内置赋值操作也不复杂，不过应该需要比较严格的类型检查，比如数组类型（元素类型和长度）完全相同或者元素类型相同但左操作数的长度大于等于右操作数的长度，但这样应用很有限，并不是必要的。而且会导致上面的“=”的二义性问题。
+
+实际上用循环对元素进行逐个赋值就可以解决这个问题。C标准库函数memcpy可以实现连续存储器区域按值复制的赋值语义，同样适用于数组（C/C++的数组占据连续的地址空间）。
+
+C++中，可以使用循环或对应的std::memcpy。此外，也可以自行实现成员为数组的结构体/类，然后重载operator[]和operator=实现可用=表示赋值的自定义数组。例如：
+
+```C++
+template<typename _elementType>
+class MyArray
+{
+private:
+    _elementType* m_array;
+public:
+    operator=(const _elementType&); //赋值：复制元素的实现可以用std::copy。
+    operator=(_elementType*); //指针兼容的赋值：考虑内存管理，比较麻烦，不一定需要实现。内置数组是寄存器/自动存储类对象（动态分配得到的是指针不是数组），没有这个问题。
+    _elementType& operator[](std::size_t); //引用元素。
+    const _elementType& operator[](std::size_t) const;
+    operator _elementType*(); //退化。
+    operator const _elementType*() const;
+};
+```
+
+（当然不支持“=”的设计也有一些缺陷。这样的语言特性导致数组不是first level citizen，除了直观性问题外，还有其它的副作用。例如，多维数组事实上是数组的数组，如果要用循环实现多维数组间部分元素的复制，支持内置“=”的话一个一重循环就够了，编译器可以推断出复制细节；而现在的需要用多重循环“=”，或者使用一重循环嵌套memcpy之类的用于实现复制细节的函数，形式上更麻烦。）
+
+---
+
+## 参数传递
+
+#### const形参和实参
+
+> As we’ve seen, a pointer is an object that can point to a different object. As a result,
+>
+> we can talk independently about whether a pointer is const and whether the objects
+>
+> to which it can point are const. We use the term top-level const to indicate that the
+>
+> pointer itself is a const. When a pointer can point to a const object, we refer to
+>
+> that const as a low-level const.
+
+你看，上面的英文是不是清晰的做出了对所谓顶层const和底层const的解释。说白了顶层const是变量自身是不能改变，而底层const是对于指针来说，指针指向的变量不能被指针修改，以后这个指针也只能赋值给指向常量数据类型的指针（不然就乱套了）。
+
+#### 顶层const
+
+const另一个不好理解的就是**带有顶层const**的形参的const会被忽略！也就是：
+
+```
+A: foo(int a){}
+
+B: foo(const int a){}
+```
+
+不能是重载， $$c++ Primer$$ 中文版给的说明是形参列表应该有明显不同（不吐不快：这还不明显）。应该说是迁就$$C$$,在 C 语言里，版本 A 和版本 B 是没有区别的。如果这两个版本定义在相同的作用域中，C 编译器就会认为是函数重定义，而不是函数重载，因为 C 中根本就没有重载的概念。由于 C 中函数参数只有传值一种传递方式，因此 const 只是告诉编译器，形参在函数里面值是不可以被改变的。但是这已经跟实参没有任何关系了，传递进来的只不过是一个副本。与之不同的是 C++ 有引用，传引用会对实参造成影响，即**引用的顶层const产生重载**。
+
+---
+
+## 类
+
+#### 访问、继承说明符
+
+[访问、继承说明符的理解_roachsinai的豆瓣笔记](https://book.douban.com/annotation/37466290/)
+
+#### 虚函数表
+
+[虚函数表的理解_roachsinai的豆瓣笔记](https://book.douban.com/annotation/37469931/)
+
+#### 成员函数后const
+
+表示这个成员函数只是来**读取**成员变量的值，若**试图修改**编译器会按错误处理。
+
+#### 传递成员函数
+
+今天，写一个类的时候用到了标准库的sort，当然用到了比较函数。而我用的比较函数是一个类的**非静态**成员函数 $$vs2012$$ 报了如下错误：
+
+> trend_order.cpp(521): error C3867: “TrendOrder(类)::comp_trend_score(成员函数)”: 函数调用缺少参数列表；请使用“&TrendOrder::comp_trend_score”创建指向成员的指针
+>
+> trend_order.cpp(521): error C2780: “void std::sort(_RanIt,_RanIt)”: 应输入 2 个参数，却提供了 3 个
+>
+> D:\Microsoft\Microsoft Visual Studio 11.0\VC\include\algorithm(3699) : 参见“std::sort”的声明
+
+这就在于**类静态函数**、**普通函数**、**类成员函数**的区别，主要是类成员函数有隐含的this指针，也就是说上面的错误是比较函数应该提供两个参数，确提供了3个。而一种修改方法是，将成员函数改为静态成员函数；另一种是成员函数改为普通函数。再一个说一下自认为静态成员函数和成员函数的另一个区别就是静态成员函数可以直接类名调用，再没有因为其他功能本人目前水平认为成员函数不能胜任。
+
+另外，成员函数指针和一般函数指针也有明显区别，比如成员函数指针需要绑定对象。
+
+```
+int func(int x);
+the type is "int (*)(int)" // since it is an ordinary function
+
+int MyArray::f2(int x);
+the type is "int (MyArray::*)(int)" // since it is a non-static member function of class MyArray
+```
+
+如果想输出变量的**类型**，可以包含头文件 <typeinfo>，
+
+```
+cout << typeid(func).name() << endl;
+```
+
+---
+
+## C++ Programming tips
+
+#### variables
+
+[Any functions into which you pass string literals `"I am a string literal"` should use `char const *` as the type instead of `char*`.](http://stackoverflow.com/a/16867229/6074780)
+
+#### 浮点数比较
+
+由于浮点数是对实数的近似表现，就会出现认为两个浮点数相同，但直接使用 == 判断结果不相同的情况。[栗子：](http://www.learncpp.com/cpp-tutorial/25-floating-point-numbers/)
+
+```
+#include <iostream>
+#include <iomanip> // for std::setprecision()
+
+int main()
+{
+    std::cout << std::setprecision(17);
+
+    double d1(1.0);
+    std::cout << d1 << std::endl; // 1
+
+    double d2(0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1); // should equal 1.0
+    std::cout << d2 << std::endl; // 0.99999999999999989
+}
+```
+
+[判断方法：](http://www.learncpp.com/cpp-tutorial/25-floating-point-numbers/)
+
+```
+#include <iostream>
+#include <cmath>
+
+#include <cfloat>
+// #define FLT_EPSILON   1.19209290E-07F
+// #define LDBL_EPSILON  1.084202172485504E-19
+
+int main(int argc, char const *argv[])
+{
+    double d1(1.0);
+    double d2(0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1);
+
+    bool b;
+    if ( abs(a-b) < FLT_EPSILON )
+        b = true;
+    else
+        b = false;
+
+    return 0;
+}
+```
+
+---
+
+## References
+
+[^1]:[数组与指针---都是"退化"惹的祸](http://www.chinaunix.net/old_jh/23/1031622.html)
+
+[^2]:[剑指offer 面试题33]()
+
+[^3]:[原创回答团百度知道的回答](http://zhidao.baidu.com/question/179864633.html)

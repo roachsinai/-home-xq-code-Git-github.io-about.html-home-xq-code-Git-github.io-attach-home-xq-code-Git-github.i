@@ -1,0 +1,68 @@
+# Site settings
+title: Roach's Blog
+header-img: img/mac_os_x_mavericks.jpg
+email: roachsinai@gmail.com
+description: "追求不够高，行动力不强，拖延综合症患者"
+baseurl: ""
+url: "http://roachsinai.github.io"
+
+
+# SNS settings
+RSS: false
+weibo_username:     blessunknow
+zhihu_username:     nameisunknow
+github_username:    nameisunknow
+douban_username:    nameisunknow
+
+
+# Build settings
+highlighter: rouge
+permalink: pretty
+exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
+anchorjs: true      # if you want to customize anchor. check out line:129 of `post.html`
+gems: [jekyll-paginate]
+paginate: 7 # 分页功能
+paginate_path: "page:num"
+
+# Markdown settings
+# replace redcarpet to kramdown,
+# although redcarpet can auto highlight code, the lack of header-id make the catalog impossible, so I switch to kramdown
+# document: http://jekyllrb.com/docs/configuration/#kramdown
+markdown: kramdown
+kramdown:
+  input: GFM        # use Github Flavored Markdown !important
+
+# Duoshuo settings
+# to the old version user, please set your own DuoShuo account in `post.html`, `keynote.html` and `about.html`
+# duoshuo_username: roach
+# duoshuo_share: true                     # set to false if you want to use Comment without Sharing
+# seeing the Share component is depend on Comment so we can NOT use share only.
+# Disqus settings
+disqus_username: roachsinai
+
+# Todo: Analysis settings
+# Please set your own analysis account in `head.html`(Baidu) and `default.html`(QQ)
+useBaiduAnalysis: false
+useTencentAnalysis: true
+useGoogleAnalysis: true     # TODO
+
+
+# Sidebar settings
+sidebar: true
+sidebar-featured-tags: true
+sidebar-about-description: "已经过去的自己，需要改变。"
+sidebar-avatar: /img/Sasori.jpg    # use absolute URL.
+
+# timezone
+# timezone: +0800
+
+# Friends
+#friends: [
+#    {
+#        title: "天镶的博客",
+#        href: "http://lingyu.wang/"
+#    },{
+#       title: "Luke的自留地",
+#        href: "http://hmqk1995.github.io"
+#    }
+#]
